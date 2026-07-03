@@ -67,21 +67,21 @@ type StepInfo = {
 
 // Generate steps dynamically
 const steps: StepInfo[] = [
-  { bg: '/活動主頁.png' },
-  { bg: '/活動一.png' },
-  { bg: '/活動一.png', isScoreInput: true, eventId: 'game1', eventTitle: '關卡一：終極巨嬰爭霸戰' },
-  { bg: '/活動二.png' },
-  { bg: '/活動二.png', isScoreInput: true, eventId: 'game2', eventTitle: '關卡二：舌尖上的米其林' },
-  { bg: '/活動三.png' }, // Base Game 3 background
+  { bg: '/main.png' },
+  { bg: '/event1.png' },
+  { bg: '/event1.png', isScoreInput: true, eventId: 'game1', eventTitle: '關卡一：終極巨嬰爭霸戰' },
+  { bg: '/event2.png' },
+  { bg: '/event2.png', isScoreInput: true, eventId: 'game2', eventTitle: '關卡二：舌尖上的米其林' },
+  { bg: '/event3.png' }, // Base Game 3 background
 ];
 
 QA_LIST.forEach((qa, index) => {
-  steps.push({ bg: '/活動三.png', isQA: true, qaIndex: index, showAnswer: false });
-  steps.push({ bg: '/活動三.png', isQA: true, qaIndex: index, showAnswer: true, isScoreInput: true, eventId: `q${index + 1}`, eventTitle: `關卡三 - ${qa.q.split('\n')[0]}` });
+  steps.push({ bg: '/event3.png', isQA: true, qaIndex: index, showAnswer: false });
+  steps.push({ bg: '/event3.png', isQA: true, qaIndex: index, showAnswer: true, isScoreInput: true, eventId: `q${index + 1}`, eventTitle: `關卡三 - ${qa.q.split('\n')[0]}` });
 });
 
 // Final scoreboard page
-steps.push({ bg: '/活動主頁.png', isScoreboard: true });
+steps.push({ bg: '/main.png', isScoreboard: true });
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
