@@ -192,7 +192,7 @@ export default function App() {
       <AnimatePresence mode="popLayout">
         <motion.img
           key={step.bg}
-          src={encodeURI(step.bg)}
+          src={import.meta.env.BASE_URL + encodeURI(step.bg).replace(/^\//, "")}
           alt="Background"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -241,7 +241,7 @@ export default function App() {
                               {idx + 1}
                             </span>
                             <div className={`relative w-full rounded-2xl overflow-hidden shadow-md aspect-[3/4] ${isCorrectAnswer ? 'ring-8 ring-pink-500 scale-105 z-10' : ''}`}>
-                              <img src={encodeURI(img)} alt={`選項 ${idx + 1}`} className="w-full h-full object-cover" />
+                              <img src={import.meta.env.BASE_URL + encodeURI(img).replace(/^\//, "")} alt={`選項 ${idx + 1}`} className="w-full h-full object-cover" />
                               {isCorrectAnswer && (
                                 <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
                                   <span className="text-pink-600 bg-white/90 px-4 py-2 rounded-full font-black text-sm md:text-lg whitespace-nowrap shadow-xl">
@@ -261,7 +261,7 @@ export default function App() {
                       {currentQA.images2.map((item, idx) => (
                         <div key={idx} className="relative flex flex-col items-center max-w-[250px]">
                           <div className="relative rounded-2xl overflow-hidden shadow-md bg-white border border-slate-100 p-2">
-                            <img src={encodeURI(item.src)} alt={item.label} className="w-full h-auto object-contain aspect-square" />
+                            <img src={import.meta.env.BASE_URL + encodeURI(item.src).replace(/^\//, "")} alt={item.label} className="w-full h-auto object-contain aspect-square" />
                           </div>
                           <div className="mt-4 text-center">
                             <span className="block text-xl font-black text-slate-700">{item.label}</span>
