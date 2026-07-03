@@ -1,0 +1,6 @@
+{
+  "name": "寶寶性別揭曉派對",
+  "description": "龍哥與茶茶的寶寶性別揭曉派對活動關卡與互動系統，包含三個趣味競賽與終極性別揭曉儀式。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
