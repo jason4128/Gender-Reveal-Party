@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Trophy, Award } from 'lucide-react';
 
 const PLAYERS = ['吉伶', '心羚', '亭羽'];
 
@@ -48,11 +48,20 @@ const QA_LIST = [
   },
 ];
 
+const EVENTS = [
+  { id: 'game1', title: '關卡一：終極巨嬰爭霸戰' },
+  { id: 'game2', title: '關卡二：舌尖上的米其林' },
+  ...QA_LIST.map((qa, i) => ({ id: `q${i + 1}`, title: `關卡三 - ${qa.q.split('\n')[0]}` }))
+];
+
 type StepInfo = {
   bg: string;
   isQA?: boolean;
   qaIndex?: number;
   showAnswer?: boolean;
+  isScoreInput?: boolean;
+  eventId?: string;
+  eventTitle?: string;
   isScoreboard?: boolean;
 };
 
@@ -60,13 +69,15 @@ type StepInfo = {
 const steps: StepInfo[] = [
   { bg: '/活動主頁.png' },
   { bg: '/活動一.png' },
+  { bg: '/活動一.png', isScoreInput: true, eventId: 'game1', eventTitle: '關卡一：終極巨嬰爭霸戰' },
   { bg: '/活動二.png' },
+  { bg: '/活動二.png', isScoreInput: true, eventId: 'game2', eventTitle: '關卡二：舌尖上的米其林' },
   { bg: '/活動三.png' }, // Base Game 3 background
 ];
 
 QA_LIST.forEach((qa, index) => {
   steps.push({ bg: '/活動三.png', isQA: true, qaIndex: index, showAnswer: false });
-  steps.push({ bg: '/活動三.png', isQA: true, qaIndex: index, showAnswer: true });
+  steps.push({ bg: '/活動三.png', isQA: true, qaIndex: index, showAnswer: true, isScoreInput: true, eventId: `q${index + 1}`, eventTitle: `關卡三 - ${qa.q.split('\n')[0]}` });
 });
 
 // Final scoreboard page
@@ -75,55 +86,45 @@ steps.push({ bg: '/活動主頁.png', isScoreboard: true });
 export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
   
-  const [scores, setScores] = useState<Record<number, Record<string, number>>>(() => {
-    const saved = localStorage.getItem('reveal_party_scores_v3');
+  const [scores, setScores] = useState<Record<string, Record<string, number>>>(() => {
+    const saved = localStorage.getItem('reveal_party_scores_v4');
     return saved ? JSON.parse(saved) : {};
   });
 
   useEffect(() => {
-    localStorage.setItem('reveal_party_scores_v3', JSON.stringify(scores));
+    localStorage.setItem('reveal_party_scores_v4', JSON.stringify(scores));
   }, [scores]);
 
-  const handleAddScore = (player: string, e: React.MouseEvent) => {
+  const handleAddScore = (eventId: string, player: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const qaIndex = steps[currentStep].qaIndex;
-    if (qaIndex !== undefined) {
-      setScores(prev => {
-        const currentQAScores = prev[qaIndex] || { '吉伶': 0, '心羚': 0, '亭羽': 0 };
-        return {
-          ...prev,
-          [qaIndex]: { ...currentQAScores, [player]: (currentQAScores[player] || 0) + 1 }
-        };
-      });
-    }
+    setScores(prev => {
+      const currentEventScores = prev[eventId] || { '吉伶': 0, '心羚': 0, '亭羽': 0 };
+      return {
+        ...prev,
+        [eventId]: { ...currentEventScores, [player]: (currentEventScores[player] || 0) + 1 }
+      };
+    });
   };
 
-  const handleMinusScore = (player: string, e: React.MouseEvent) => {
+  const handleMinusScore = (eventId: string, player: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const qaIndex = steps[currentStep].qaIndex;
-    if (qaIndex !== undefined) {
-      setScores(prev => {
-        const currentQAScores = prev[qaIndex] || { '吉伶': 0, '心羚': 0, '亭羽': 0 };
-        return {
-          ...prev,
-          [qaIndex]: { ...currentQAScores, [player]: Math.max(0, (currentQAScores[player] || 0) - 1) }
-        };
-      });
-    }
+    setScores(prev => {
+      const currentEventScores = prev[eventId] || { '吉伶': 0, '心羚': 0, '亭羽': 0 };
+      return {
+        ...prev,
+        [eventId]: { ...currentEventScores, [player]: Math.max(0, (currentEventScores[player] || 0) - 1) }
+      };
+    });
   };
 
-  const getCurrentQAScore = (player: string) => {
-    const qaIndex = steps[currentStep].qaIndex;
-    if (qaIndex !== undefined) {
-      return scores[qaIndex]?.[player] || 0;
-    }
-    return 0;
+  const getScore = (eventId: string, player: string) => {
+    return scores[eventId]?.[player] || 0;
   };
 
   const getTotalScore = (player: string) => {
     let total = 0;
-    Object.values(scores).forEach(qaScores => {
-      total += (qaScores[player] || 0);
+    Object.values(scores).forEach(eventScores => {
+      total += (eventScores[player] || 0);
     });
     return total;
   };
@@ -154,6 +155,34 @@ export default function App() {
   const step = steps[currentStep];
   const currentQA = step.isQA && step.qaIndex !== undefined ? QA_LIST[step.qaIndex] : null;
 
+  const renderScoreInput = (eventId: string, eventTitle: string, hideTitle = false) => (
+    <div className="mt-8 border-t-2 border-slate-100 pt-8 w-full">
+      {!hideTitle && <h3 className="text-xl font-bold text-slate-500 mb-6 text-center">👇 點擊人名為【{eventTitle}】加分 👇</h3>}
+      {hideTitle && <h3 className="text-xl font-bold text-slate-500 mb-6 text-center">👇 點擊人名加分 👇</h3>}
+      <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
+        {PLAYERS.map(player => (
+          <div key={player} className="flex flex-col items-center gap-2">
+            <button
+              onClick={(e) => handleAddScore(eventId, player, e)}
+              className="px-6 py-4 bg-slate-100 hover:bg-pink-100 hover:text-pink-600 border border-slate-200 hover:border-pink-300 rounded-2xl font-black text-2xl text-slate-700 transition-colors shadow-sm active:scale-95"
+            >
+              {player}
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-pink-500 w-12 text-center">{getScore(eventId, player)} 分</span>
+              <button 
+                onClick={(e) => handleMinusScore(eventId, player, e)}
+                className="w-8 h-8 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center font-bold text-lg hover:bg-slate-300"
+              >
+                -
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div 
       className="w-full h-screen relative bg-black overflow-hidden flex items-center justify-center cursor-pointer select-none"
@@ -175,22 +204,22 @@ export default function App() {
 
       {/* Dark overlay when Lightbox is active */}
       <AnimatePresence>
-        {step.isQA && (
+        {(step.isQA || step.isScoreInput) && !step.isScoreboard && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 md:p-12"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 md:p-12 overflow-y-auto"
           >
-            {currentQA && (
+            {step.isQA && currentQA ? (
               <motion.div
                 key={`${step.qaIndex}-${step.showAnswer}`}
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -20 }}
                 transition={{ duration: 0.3, type: 'spring', bounce: 0.3 }}
-                className="bg-white/95 rounded-[3rem] p-8 md:p-16 max-w-7xl w-full shadow-2xl border-4 border-rose-200"
+                className="bg-white/95 rounded-[3rem] p-8 md:p-16 max-w-7xl w-full shadow-2xl border-4 border-rose-200 my-auto"
                 onClick={(e) => e.stopPropagation()} // Prevent clicking modal from instantly skipping next
               >
                 <div className="flex flex-col items-center text-center space-y-8">
@@ -251,32 +280,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {step.showAnswer && (
-                    <div className="mt-12 border-t-2 border-slate-100 pt-8 w-full">
-                      <h3 className="text-xl font-bold text-slate-500 mb-6 text-center">👇 點擊人名加分 👇</h3>
-                      <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
-                        {PLAYERS.map(player => (
-                          <div key={player} className="flex flex-col items-center gap-2">
-                            <button
-                              onClick={(e) => handleAddScore(player, e)}
-                              className="px-6 py-4 bg-slate-100 hover:bg-pink-100 hover:text-pink-600 border border-slate-200 hover:border-pink-300 rounded-2xl font-black text-2xl text-slate-700 transition-colors shadow-sm active:scale-95"
-                            >
-                              {player}
-                            </button>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl font-bold text-pink-500 w-12 text-center">{getCurrentQAScore(player)} 分</span>
-                              <button 
-                                onClick={(e) => handleMinusScore(player, e)}
-                                className="w-8 h-8 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center font-bold text-lg hover:bg-slate-300"
-                              >
-                                -
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {step.showAnswer && step.isScoreInput && step.eventId && renderScoreInput(step.eventId, step.eventTitle || '', true)}
                   
                   <div className="pt-8">
                     <button 
@@ -289,7 +293,33 @@ export default function App() {
                   </div>
                 </div>
               </motion.div>
-            )}
+            ) : step.isScoreInput && !step.isQA ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                transition={{ duration: 0.3, type: 'spring', bounce: 0.3 }}
+                className="bg-white/95 rounded-[3rem] p-8 md:p-16 max-w-4xl w-full shadow-2xl border-4 border-rose-200 my-auto text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Award size={64} className="text-pink-400 mx-auto mb-6" />
+                <h2 className="text-3xl md:text-5xl font-black text-slate-800 leading-tight mb-8">
+                  {step.eventTitle} 結算
+                </h2>
+                
+                {step.eventId && renderScoreInput(step.eventId, step.eventTitle || '')}
+                
+                <div className="pt-8">
+                  <button 
+                    onClick={goNext}
+                    className="mx-auto px-10 py-5 bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white rounded-full font-black text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center gap-3"
+                  >
+                    結算完成，前往下一關卡
+                    <ChevronRight size={28} />
+                  </button>
+                </div>
+              </motion.div>
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>
@@ -302,22 +332,70 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+            className="absolute inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-[3rem] p-10 md:p-16 w-full max-w-4xl shadow-2xl flex flex-col items-center">
-              <div className="flex items-center gap-4 mb-12">
+            <div className="bg-white rounded-[3rem] p-8 md:p-12 w-full max-w-5xl shadow-2xl flex flex-col items-center my-auto">
+              <div className="flex items-center gap-4 mb-8">
                 <Trophy size={48} className="text-amber-400" />
-                <h2 className="text-4xl md:text-5xl font-black text-slate-800">最終成績統計</h2>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-800">最終成績統計表</h2>
                 <Trophy size={48} className="text-amber-400" />
               </div>
-              <div className="flex justify-center gap-8 md:gap-24 w-full flex-wrap">
+
+              {/* Table Scoreboard */}
+              <div className="w-full overflow-x-auto mb-10">
+                <table className="w-full text-center border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-4 border-b-2 border-slate-200 text-slate-400 font-bold text-left">關卡 / 題目</th>
+                      {PLAYERS.map(player => (
+                        <th key={player} className="p-4 border-b-2 border-slate-200 text-slate-700 font-black text-xl">
+                          {player}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EVENTS.map(event => (
+                      <tr key={event.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4 border-b border-slate-100 text-slate-600 font-bold text-left">
+                          {event.title}
+                        </td>
+                        {PLAYERS.map(player => (
+                          <td key={`${event.id}-${player}`} className="p-4 border-b border-slate-100 text-slate-700 font-bold text-lg">
+                            {getScore(event.id, player) > 0 ? (
+                              <span className="bg-pink-100 text-pink-600 px-3 py-1 rounded-lg">
+                                {getScore(event.id, player)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {/* Totals Row */}
+                    <tr className="bg-amber-50/50">
+                      <td className="p-4 border-t-4 border-amber-200 text-amber-600 font-black text-xl text-left">
+                        總分加總
+                      </td>
+                      {PLAYERS.map(player => (
+                        <td key={`total-${player}`} className="p-4 border-t-4 border-amber-200 text-pink-500 font-black text-3xl">
+                          {getTotalScore(player)}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-center gap-8 md:gap-16 w-full flex-wrap">
                 {PLAYERS.map(player => (
-                  <div key={player} className="flex flex-col items-center bg-slate-50 px-10 py-8 rounded-3xl border-2 border-slate-100 shadow-sm">
-                    <span className="text-3xl md:text-4xl font-black text-slate-700 mb-6">{player}</span>
+                  <div key={player} className="flex flex-col items-center bg-white px-8 py-6 rounded-3xl border-4 border-slate-100 shadow-xl transform transition-transform hover:scale-105">
+                    <span className="text-2xl md:text-3xl font-black text-slate-700 mb-4">{player}</span>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-7xl md:text-8xl font-black text-pink-500">{getTotalScore(player)}</span>
-                      <span className="text-2xl font-bold text-slate-400">分</span>
+                      <span className="text-6xl md:text-7xl font-black text-pink-500">{getTotalScore(player)}</span>
+                      <span className="text-xl font-bold text-slate-400">分</span>
                     </div>
                   </div>
                 ))}
